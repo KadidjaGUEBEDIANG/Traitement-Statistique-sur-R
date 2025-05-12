@@ -1,0 +1,41 @@
+---
+output: pdf_document
+geometry: margin=2.5cm
+fontsize: 12pt
+---
+
+
+
+Kadidja GUEBEDIANG A NKEN  
+Dakar, Colobane  
+(+221) 78 709 50 18  
+guebediangk@gmail.com  
+
+\vspace{1cm}
+
+**Dakar, le 22 avril 2025**  
+
+STATINFO  
+Zone de captage - Dakar  
+À l’attention du Directeur Général  
+
+\vspace{0.5cm}
+
+**Objet :** Demande de stage  
+**PJ :** 1 CV  
+
+\vspace{0.5cm}
+
+Madame le Directeur,
+
+Actuellement en ISEP2 dans le cadre d’une formation ISE (Ingénieur statisticien économiste) à l’ENSAE, je dois effectuer un stage obligatoire d’immersion de 6 semaines (période août-septembre) dans un service en rapport avec le domaine de la statistique.
+
+Ce stage représente pour moi une opportunité de mettre en pratique les connaissances théoriques acquises à l’école et de rédiger un rapport dont la note de soutenance sera prise en compte dans l’évaluation finale. Ce sera aussi une occasion de partager mon expérience et mon savoir-faire avec votre personnel, tout en développant mes compétences en communication interpersonnelle, un aspect fortement valorisé dans notre formation.
+
+J’espère que ma demande retiendra votre attention. Dans l’attente d’une réponse favorable, je vous prie d’agréer, Madame le Directeur, l’expression de ma haute considération.
+
+\vspace{1cm}
+
+L’intéressée,  
+
+Kadidja GUEBEDIANG A NKEN

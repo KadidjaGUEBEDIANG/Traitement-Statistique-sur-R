@@ -1,0 +1,51 @@
+---
+title: 
+author: 
+output:
+  pdf_document:
+    toc: false
+    number_sections: false
+geometry: margin=2.5cm
+fontsize: 11pt
+---
+
+# Informations personnelles
+
+**Nom :** Kadidja GUEBEDIANG A NKEN  
+**Adresse :** Colobane, Dakar  
+**Téléphone :** (+221) 78 709 50 18  
+**Email :** guebediangk@gmail.com  
+
+---
+
+# Objectif professionnel
+
+Étudiante en 2e année à l'ENSAE dans le cycle Ingénieur Statisticien Économiste, je recherche un stage d'immersion de 6 semaines pour mettre en pratique mes compétences en statistique appliquée et en économie.
+
+---
+
+# Formation
+
+- **Depuis 2023** – ENSAE Dakar — Ingénieur Statisticien Économiste (ISE)  
+- **2021 - 2023** – Licence en Mathématiques appliquées et Économie, [Nom de l’établissement]  
+- **2018 - 2021** – Baccalauréat série S, lycée bilingue  
+
+---
+
+# Compétences
+
+- **Statistique :** régressions, tests, analyse de données  
+- **Économie :** microéconomie, macroéconomie, économie du développement  
+- **Programmation :** R, Python, Excel, Stata, C 
+- **Langues :** français (courant), anglais (intermédiaire)  
+
+---
+
+# Expérience
+
+- **Avril 2025-Mai 2025** : Projet de modélisation prédictive à l’ENSAE  
+  *Développement d’un modèle de prévision des résultats académiques des étudiants à partir de variables socio-économiques*  
+ 
+
+
+
