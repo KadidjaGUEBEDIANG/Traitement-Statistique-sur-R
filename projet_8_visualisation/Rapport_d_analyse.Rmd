@@ -1,15 +1,18 @@
 ---
-title: "Rapport d’analyse de la répartition des activités agricoles et d’élevage - Sénégal"
-author: "Kadidja GUEBEDIANG A NKEN--Isep2 "
-date: "Année académique 2024/2025"
+title: ""
 output:
   pdf_document:
     toc: true
     toc_depth: 3
     number_sections: true
     latex_engine: xelatex
-  html_document: default
+    includes:
+      before_body: cover_analyse.tex
+
+header-includes:
+  - \usepackage{xcolor}
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
@@ -19,105 +22,6 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 Ce rapport a pour objectif de visualiser la répartition spatiale des activités agricoles et d'élevage à partir des données de l'enquête EHCVM 2018 pour le Sénégal. Nous utilisons les données par ménage et par parcelle, combinées à un fond de carte administratif.
 
 
-```{r libraries}
-library(sf)
-library(haven)
-library(dplyr)
-library(tidyr)
-library(tmap)
-library(ggplot2)
-library(patchwork)
-```
-
-
-```{r import}
-# Chemins d'accès (à adapter selon votre configuration)
-data_path <- "C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/projet_cartographie_Shiny/"
-
-# Chargement des fichiers
-s16a <- read_dta(paste0(data_path, "s16a_me_SEN2018.dta")) # Données agricoles
-s16b <- read_dta(paste0(data_path, "s16b_me_SEN2018.dta")) 
-s17  <- read_dta(paste0(data_path, "s17_me_SEN2018.dta"))  # Données élevage
-s00  <- read_dta(paste0(data_path, "s00_me_SEN2018.dta"))  # Données géographiques
-
-
-```
-
-
-
-```{r nettoyage}
-s00 <- s00 %>%
-  rename(region = s00q01, departement = s00q02, milieu = s00q04) %>%
-  select(grappe, menage, region, departement, milieu)
-
-s16a <- s16a %>%
-  rename(culture = s16aq08, superficie = s16aq09a)
-
-s17 <- s17 %>%
-  rename(espece = s17q02, nb_animaux = s17q05)
-```
-
-
-```{r aggregation}
-agriculture <- s16a %>%
-  group_by(grappe, menage) %>%
-  summarise(nb_parcelles = n(), .groups = "drop")
-
-elevage <- s17 %>%
-  group_by(grappe, menage) %>%
-  summarise(nb_animaux = sum(nb_animaux, na.rm = TRUE), .groups = "drop")
-
-merged_data <- full_join(agriculture, elevage, by = c("grappe", "menage"))
-merged_geo <- left_join(merged_data, s00, by = c("grappe", "menage"))
-
-merged_geo <- merged_geo %>%
-  mutate(nb_parcelles = replace_na(nb_parcelles, 0),
-         nb_animaux = replace_na(nb_animaux, 0))
-```
-
-
-```{r region-summary}
-region_data <- merged_geo %>%
-  group_by(region) %>%
-  summarise(
-    total_parcelles = sum(nb_parcelles, na.rm = TRUE),
-    total_animaux = sum(nb_animaux, na.rm = TRUE)
-  )
-
-region_data <- region_data %>% mutate(region = toupper(region))
-
-correspondance <- data.frame(
-  region = as.character(1:14),
-  NOMREG = c("DAKAR", "ZIGUINCHOR", "DIOURBEL", "SAINT LOUIS", "TAMBACOUNDA",
-             "KAOLACK", "THIES", "LOUGA", "FATICK", "KOLDA",
-             "MATAM", "KAFFRINE", "KEDOUGOU", "SEDHIOU")
-)
-
-region_data <- left_join(region_data, correspondance, by = "region")
-```
-
-
-
-
-
-```{r map,include=TRUE}
-#sen_map <- st_read("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/projet_cartographie_Shiny/Limite_Région.shp")
-#map_data <- left_join(sen_map, region_data, by = "NOMREG")
-#library(sf)
-#sen_map <- suppressWarnings(
-  #suppressMessages(
-    #st_read("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/projet_cartographie_Shiny/Limite_Région.shp", quiet = TRUE)
- # )
-#)
-
-sen_map <- suppressWarnings(
-  suppressMessages(
-    sen_map <- st_read(paste0(data_path, "Limite_Région.shp"), quiet = TRUE)
-  )
-)
-
-map_data <- left_join(sen_map, region_data, by = "NOMREG")
-```
 
 # **VISUALISATION DES ACTIVITES AGRICOLES**
 
@@ -125,90 +29,22 @@ map_data <- left_join(sen_map, region_data, by = "NOMREG")
 
 ## Cartographie des activités agricoles
 
-La région de Kaolack est celle comptant le plus de parcelle avec 842 parcelles recensées ; elle est suivie de Kaffrine qui en compte 741. Dakar,elle, est la région comptant le moins de parcelle , n'ayant que 21 parcelles réservées pour l'agriculture alors qu'après elle , la région comptant le moins de parcelles est Matam avec 281 parcelles enregistrées, soit plus de 10 fois plus que Dakar.
+La région de Louga est celle où les ménages disposent en moyenne des plus grandes superficies cultivées avec 6,56 hectares par ménage. Elle est suivie par Kaffrine avec 5,47 hectares, puis par Kolda avec 3,24 hectares. À l’opposé, Dakar affiche la superficie moyenne la plus faible avec 0,01 hectare par ménage, ce qui représente plus de 650 fois moins que la moyenne observée à Louga.
 
-```{r map-agriculture}
+```{r act_agr, echo=FALSE,out.width="90%", fig.align="center"}
+knitr::include_graphics("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/outputs/carte_superficie_par_region.png")
 
-map_data <- map_data %>%
-  mutate(label_cheptel = paste0(NOMREG, "\n", round(total_animaux, 1)))
-
-# Carte des parcelles agricoles
-
-tmap_mode("plot")
-
-tm_shape(map_data) +
-  tm_polygons("total_parcelles", palette = "Greens", title = "Parcelles agricoles") +
-  tm_text("NOMREG", size = 0.6, col = "black", just = "left") +
-  tm_text("total_parcelles", size = 0.6, col = "black", ymod = -1.0) +
-  tm_title("Distribution des activités agricoles par région") +
-  tm_layout(legend.outside = TRUE)
-```
-
-
-## Moyenne de parcelles par ménage
-
-Dans tout le Sénégal, chaque ménage compte en moyenne 1,75 parcelles réservées à la culture, soit une parcelle et trois quarts.
-Par région, on constate que les ménages comptant en moyenne le plus de parcelles réservées se situent dans la région de Kaoloack, Kaffrine et Sedhiou où chaque ménage compte en moyenne un peu plus de 2 parcelles. La région comptant le moins de parcelles par ménage est Dakar, où chaque ménage compte en moyenne un dixième de parcelles de terrain.
-
-```{r moyenne-par-region}
-mean(merged_geo$nb_parcelles, na.rm = TRUE)
-
-moyenne_par_region <- merged_geo %>%
-  group_by(region) %>%
-  summarise(moyenne_parcelles = mean(nb_parcelles, na.rm = TRUE)) %>%
-  mutate(region = as.character(region)) %>%
-  left_join(correspondance, by = "region")
-
-ggplot(moyenne_par_region, aes(x = reorder(NOMREG, moyenne_parcelles), y = moyenne_parcelles)) +
-  geom_col(fill = "forestgreen") +
-  geom_text(aes(label = round(moyenne_parcelles, 1)), vjust = -0.3, size = 3) +
-  coord_flip() +
-  labs(title = "Nombre moyen de parcelles par ménage",
-       x = "Région", y = "Moyenne de parcelles") +
-  theme_minimal()
 ```
 
 ## Part des parcelles en propriété par région
 
-La plupart des ménages au Sénégal possédant des parcelles sont propriétaire de ces parcelles. 
-La région possédant le moins de ménages propriétaires des parcelles dont ils ont le soin est Dakar, où la moitié des ménages possédent des parcelles dont ils ne sont pas propriétaires tandis quà Kolda, Louga ou Kedougou , 04 ménages sur 05 possèdent des parcelles dont ils sont propriétaires.
+La région de Matam est celle où les parcelles agricoles en propriété sont en moyenne les plus vastes, avec 6,92 hectares par parcelle. Elle est suivie par Louga (3,39 ha) et Kaffrine (3,29 ha), toutes deux situées dans des zones rurales à faible densité de population, où l’on trouve davantage de terres disponibles pour l’agriculture extensive.
 
-```{r part-des-parcelles-region}
-# Étape 1 : Ajouter les libellés + joindre les infos régionales
-occupation_data <- s16a %>%
-  rename(mode_occupation = s16aq10) %>%
-  left_join(s00, by = c("grappe", "menage")) %>%
-  filter(!is.na(mode_occupation)) %>%
-  mutate(
-    region = as.character(region),
-    mode_occupation = recode(as.character(mode_occupation), 
-                             "1" = "Propriétaire",
-                             "2" = "Prêt gratuit",
-                             "3" = "Fermage",
-                             "4" = "Métayage",
-                             "5" = "Gage",
-                             "6" = "Autre")
-  )
+À l’opposé, la région de Ziguinchor enregistre la plus petite superficie moyenne, avec seulement 0,62 hectare par parcelle, suivie de près par Kédougou (0,67 ha) et Dakar (1,02 ha). Ces faibles moyennes s’expliquent par une forte pression foncière, un morcellement élevé des terres, et dans le cas de Dakar, par une urbanisation massive laissant très peu de place à l’activité agricole.
 
-# Étape 2 : Compter le total de parcelles et celles en propriété
-occupation_pourcentage <- occupation_data %>%
-  group_by(region, mode_occupation) %>%
-  summarise(nb = n(), .groups = "drop") %>%
-  group_by(region) %>%
-  mutate(total_region = sum(nb)) %>%
-  filter(mode_occupation == "Propriétaire") %>%
-  mutate(pourcentage = round((nb / total_region) * 100, 1)) %>%
-  left_join(correspondance, by = "region")
+```{r par_pro, echo=FALSE, out.width="95%", fig.align="center"}
 
-
-ggplot(occupation_pourcentage, aes(x = reorder(NOMREG, pourcentage), y = pourcentage)) +
-  geom_col(fill = "darkgreen") +
-  geom_text(aes(label = paste0(pourcentage, "%")), hjust = -0.1, size = 3) +
-  coord_flip() +
-  labs(title = "Part des parcelles en propriété par région",
-       x = "Région", y = "Pourcentage") +
-  theme_minimal()
-
+knitr::include_graphics("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/outputs/superficie_proprietaires_par_region.png")
 
 ```
 
@@ -219,124 +55,29 @@ Cette section s'intéresse à la représentation géographique des activités d�
 
 ## Cartographie du cheptel
 
-La région de Louga est celle qui compte le plus grand cheptel avec 12786 animaux, suivi de Saint-Louis avec 11343 animaux, soit environ 5 fois moins que Ziguinchor qui en compte 2726 animaux .
+La région de Saint-Louis est celle qui compte le plus grand cheptel total avec 2869 UBT recensés, suivie de très près par Louga avec 2715,1 UBT. Dakar, en revanche, est la région qui enregistre le volume total de cheptel le plus faible, avec seulement 245,8 UBT ; ce chiffre est près de 11 fois inférieur à celui de Louga.
 
-```{r map-cheptel}
-tm_shape(map_data) +
-  tm_polygons("total_animaux", palette = "Blues", title = "Cheptel") +
-  tm_text("label_cheptel", size = 0.6, col = "black") +
-  tm_title("Distribution du cheptel par région") +
-  tm_layout(legend.outside = TRUE)
+```{r chep, echo=FALSE, out.width="95%", fig.align="center"}
+knitr::include_graphics("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/outputs/carte_total_cheptel_UBT_par_region.png")
 ```
 
 
 ## Moyenne de cheptel par ménage
 
-La région de Louga, région comptant le plus d'animaux au Sénégal, compte également en moyenne la plus grande taille de cheptel par ménage avec 35 animaux en moyenne par ménage, suivi de Dakar avec 30 animaux en moyenne par ménage; trois fois plus que Ziguinchor où les ménages n'en comptent que 10 en moyenne.
-```{r moyenne-cheptel}
-mean(merged_geo$nb_animaux, na.rm = TRUE)
-
-moyenne_cheptel_region <- merged_geo %>%
-  group_by(region) %>%
-  summarise(moyenne_cheptel = mean(nb_animaux, na.rm = TRUE)) %>%
-  mutate(region = as.character(region)) %>%
-  left_join(correspondance, by = "region")
-
-ggplot(moyenne_cheptel_region, aes(x = reorder(NOMREG, moyenne_cheptel), y = moyenne_cheptel)) +
-  geom_col(fill = "steelblue") +
-  geom_text(aes(label = round(moyenne_cheptel, 1)), vjust = -0.0, size = 3) +
-  coord_flip() +
-  labs(title = "Taille moyenne du cheptel par ménage",
-       x = "Région", y = "Nombre moyen d’animaux") +
-  theme_minimal()
-```
-
-## Menage éleveur par région
-
-La grande majorité des ménages au Sénégal possédaient au moins un animal qui leur étaient propre au moment de l'enquête. En effet, pour chaque région, plus de neuf ménages sur dix possédaient au moins un animal qui leur étaient propres.
-
-```{r menage-eleveur-par-region}
-  #1 Charger les données élevage + localisation
-elevage_menages <- s17 %>%
-  select(grappe, menage, nb_propres = s17q06) %>%  # ou renomme selon ton nom réel
-  left_join(s00, by = c("grappe", "menage")) %>%
-  filter(!is.na(nb_propres)) %>%
-  mutate(region = as.character(region))
-
-  #2 Tous les ménages ayant renseigné une activité d’élevage
-menages_elevage <- elevage_menages %>%
-  distinct(region, grappe, menage)
-
-  #3 Ménages éleveurs : ceux ayant déclaré au moins une espèce avec animaux propres > 0
-menages_eleveurs <- elevage_menages %>%
-  filter(nb_propres > 0) %>%
-  distinct(region, grappe, menage)
-
-  #4 : Calcul des effectifs + pourcentage
-elevage_par_region <- menages_elevage %>%
-  group_by(region) %>%
-  summarise(total_menages = n()) %>%
-  left_join(
-    menages_eleveurs %>%
-      group_by(region) %>%
-      summarise(nb_eleveurs = n()),
-    by = "region"
-  ) %>%
-  mutate(
-    nb_eleveurs = replace_na(nb_eleveurs, 0),
-    pourcentage = round((nb_eleveurs / total_menages) * 100, 1)
-  ) %>%
-  left_join(correspondance, by = "region")
-
-ggplot(elevage_par_region, aes(x = reorder(NOMREG, pourcentage), y = pourcentage)) +
-  geom_col(fill = "steelblue") +
-  geom_text(aes(label = paste0(pourcentage, "%")), hjust = -0.1, size = 3) +
-  coord_flip() +
-  labs(title = "Part des ménages éleveurs par région",
-       x = "Région", y = "Pourcentage de ménages") +
-  theme_minimal()
+La région de Matam est celle où les ménages possèdent en moyenne le plus grand cheptel avec 8 UBT par ménage. Elle est suivie de très près par Louga avec 7,9 UBT et Saint-Louis avec 7,7 UBT. En revanche, c’est dans la région de Diourbel que les ménages disposent du cheptel moyen le plus faible, avec seulement 1,8 UBT, ce qui est près de quatre fois moins que la moyenne observée à Louga.
+```{r chep2, echo=FALSE, out.width="95%", fig.align="center"}
+knitr::include_graphics("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/outputs/carte_moyenne_cheptel_UBT_par_region.png")
 
 ```
 
 # **VISUALISATION DES ACTIVITES AGRICOLES ET PASTORALES PAR MILIEU (urbain / rural)**
 
-En fonction des milieux de résidence, on constate qu'en moyenne les ménages vivant dans les milieux urbains possèdent 3 fois moins de parcelles réservées à l'agriculture que ceux des milieux ruraux , avec 0,7 parcelles , soit sept dixième de parcelle en moyenne par ménage. Aussi, les ménages des milieux urbains ont moins comparativement aux ménages du milieu rural qui en comptent 23.5 contre 15.9 pour les ménages des milieux urbains.
+Dans les milieux ruraux, les ménages agricoles disposent en moyenne d’un cheptel bien plus important, avec une taille de 5,33 UBT (unités de bétail tropical) par ménage, contre seulement 0,67 UBT dans les milieux urbains. Cela reflète clairement la vocation pastorale et agro-pastorale dominante des campagnes, où l’élevage joue un rôle central dans les moyens de subsistance.
 
-```{r compar-milieu}
-moyennes_milieu <- merged_geo %>%
-  mutate(milieu = as_factor(milieu)) %>%
-  group_by(milieu) %>%
-  summarise(
-    moyenne_parcelles = mean(nb_parcelles, na.rm = TRUE),
-    moyenne_cheptel = mean(nb_animaux, na.rm = TRUE),
-    .groups = "drop"
-  )
+Cette tendance se confirme aussi du côté des cultures : la superficie cultivée moyenne par ménage atteint 4,36 hectares en zone rurale, alors qu’elle n’est que de 0,61 hectare en zone urbaine. Les activités agricoles en ville restent donc très marginales, souvent pratiquées sur de petites parcelles, voire en périphérie urbaine ou dans des jardins familiaux.
 
-moyennes_long <- moyennes_milieu %>%
-  pivot_longer(cols = c(moyenne_parcelles, moyenne_cheptel),
-               names_to = "variable", values_to = "valeur")
-
-# Graphique 1 : Moyenne de parcelles par milieu
-
-p1 <- ggplot(moyennes_milieu, aes(x = milieu, y = moyenne_parcelles, fill = milieu)) +
-  geom_col() +
-  geom_text(aes(label = round(moyenne_parcelles, 1)), vjust = -0.3, size = 3) +
-  labs(title = "Nombre moyen parcelles/ ménage ",
-       x = "Milieu", y = "Nombre moyen") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-# Graphique 2 : Moyenne de cheptel par milieu
-p2 <- ggplot(moyennes_milieu, aes(x = milieu, y = moyenne_cheptel, fill = milieu)) +
-  geom_col() +
-  geom_text(aes(label = round(moyenne_cheptel, 1)), vjust = -0.3, size = 3) +
-  labs(title = "taille moyenne Cheptel/ ménage ",
-       x = "Milieu", y = "taille moyenne") +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-# Afficher côte à côte
-p1 + p2
+```{r, echo=FALSE, out.width="95%", fig.align="center"}
+knitr::include_graphics("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/outputs/graphique_moyennes_milieu.png")
 
 ```
 
@@ -344,4 +85,6 @@ p1 + p2
 
 # **CONCLUSION**
 
-Ce rapport a permis de décrire et de visualiser spatialement la répartition des activités agricoles et d'élevage par région, ainsi que les différences entre milieux urbains et ruraux. Les cartes et graphes offrent une synthèse visuelle des disparités régionales observées dans les données de l'EHCVM 2018.
+L’analyse spatiale des activités agricoles et pastorales au Sénégal met en évidence de profondes disparités régionales et sociales. Les régions comme Matam, Louga et Kaffrine se caractérisent par des parcelles en propriété plus vastes et un cheptel moyen par ménage plus élevé, reflet d’une agriculture extensive et d’une forte vocation agro-pastorale. À l’opposé, des régions comme Ziguinchor, Kédougou ou Dakar affichent des superficies et des effectifs d’élevage nettement plus faibles, en raison notamment de la pression foncière, de la densité urbaine ou de contraintes géographiques.
+
+La comparaison entre milieux ruraux et urbains accentue encore ces contrastes : les ménages ruraux cultivent en moyenne près de 4 hectares de plus et détiennent un cheptel huit fois supérieur à ceux des villes. Cela confirme le rôle central du monde rural dans la production agricole nationale, face à une agriculture urbaine marginale et souvent de subsistance.

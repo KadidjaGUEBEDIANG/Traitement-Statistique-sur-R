@@ -1,14 +1,16 @@
 ---
-title: "Rapport de traitement des données: répartition des activités agricoles et d’élevage - Sénégal"
-author: "Kadidja GUEBEDIANG A NKEN--Isep2 "
-date: "Année académique 2024-2025"
+title: ""
 output:
   pdf_document:
     toc: true
     toc_depth: 3
     number_sections: true
     latex_engine: xelatex
-  html_document: default
+    includes:
+      before_body: cover_traitement.tex
+
+header-includes:
+  - \usepackage{xcolor}
 ---
 
 ```{r setup, include=FALSE}
@@ -60,11 +62,14 @@ Pour ce rapport , nous avons eu besoin d'utiliser de 05 bases à savoir
  -la base s00, données pour les coordonnées géographiques ;  
  -la base s16c, données pour l'élevage.  
 ```{r import}
-s16a <- read_dta("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/projet_cartographie_Shiny/s16a_me_SEN2018.dta")
-s16b <- read_dta("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/projet_cartographie_Shiny/s16b_me_SEN2018.dta")
-s17  <- read_dta("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/projet_cartographie_Shiny/s17_me_SEN2018.dta")
-s00  <- read_dta("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/projet_cartographie_Shiny/s00_me_SEN2018.dta")
-s16c  <-read_dta("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/projet_cartographie_Shiny/s16c_me_SEN2018.dta")
+# Chemins d'accès (à adapter selon votre configuration)
+data_path <- "C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/projet_8_visualisation/Base/"
+
+# Chargement des fichiers
+s16a <- read_dta(paste0(data_path, "s16a_me_SEN2018.dta")) # Données agricoles
+s16b <- read_dta(paste0(data_path, "s16b_me_SEN2018.dta")) 
+s17  <- read_dta(paste0(data_path, "s17_me_SEN2018.dta"))  # Données élevage
+s00  <- read_dta(paste0(data_path, "s00_me_SEN2018.dta"))  # Données géographiques
 
 ```
 
@@ -132,7 +137,11 @@ correspondance <- data.frame(
 
 region_data <- left_join(region_data, correspondance, by = "region")
 
-sen_map <- st_read("C:/Users/LENOVO/Desktop/second semestre/ISEP2025/ISEP2025/projet_cartographie_Shiny/Limite_Région.shp")
+sen_map <- suppressWarnings(
+  suppressMessages(
+    sen_map <- st_read(paste0(data_path, "Limite_Région.shp"), quiet = TRUE)
+  )
+)
 map_data <- left_join(sen_map, region_data, by = "NOMREG")
 ```
 \newpage
